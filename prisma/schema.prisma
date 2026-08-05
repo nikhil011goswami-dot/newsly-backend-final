@@ -1,0 +1,328 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum Provider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum UserRole {
+  USER
+  EDITOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+  DELETED
+}
+
+enum NewsLanguage {
+  EN
+  HI
+  UR
+  AR
+  FR
+  DE
+  ES
+  ZH
+  JA
+  KO
+  PT
+  RU
+  BN
+  TA
+  TE
+}
+
+enum NewsStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  ARCHIVED
+  SCHEDULED
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id                  String     @id @default(cuid())
+  email               String     @unique
+  username            String?    @unique
+  fullName            String?
+  profileImageUrl     String?
+  profileImageKey     String?
+  bio                 String?
+  role                UserRole   @default(USER)
+  status              UserStatus @default(ACTIVE)
+  isEmailVerified     Boolean    @default(false)
+  preferredLanguage   String     @default("en")
+  preferredCategories Json       @default("[]")
+  fcmTokens           Json       @default("[]")
+  lastLoginAt         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  deletedAt           DateTime?
+
+  authProviders           AuthProvider[]
+  sessions                UserSession[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  articles                NewsArticle[]            @relation("AuthorArticles")
+  bookmarks               Bookmark[]
+  readHistory             ReadHistory[]
+  notifications           UserNotification[]
+
+  @@index([email])
+  @@index([status, deletedAt])
+  @@map("users")
+}
+
+model AuthProvider {
+  id             String   @id @default(cuid())
+  userId         String
+  provider       Provider
+  providerUserId String?
+  passwordHash   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@unique([provider, providerUserId])
+  @@map("auth_providers")
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  userId     String
+  deviceId   String?
+  deviceName String?
+  platform   String?
+  ipAddress  String?
+  userAgent  String?
+  isActive   Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("user_sessions")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  sessionId String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  session UserSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("refresh_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ── Categories ────────────────────────────────────────────────────────────────
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  iconUrl     String?
+  color       String?
+  parentId    String?
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  parent       Category?              @relation("CategoryChildren", fields: [parentId], references: [id])
+  children     Category[]             @relation("CategoryChildren")
+  articles     NewsArticle[]
+  translations CategoryTranslation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model CategoryTranslation {
+  id         String       @id @default(cuid())
+  categoryId String
+  language   NewsLanguage
+  name       String
+  createdAt  DateTime     @default(now())
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, language])
+  @@map("category_translations")
+}
+
+// ── News Articles ─────────────────────────────────────────────────────────────
+
+model NewsArticle {
+  id                 String       @id @default(cuid())
+  title              String
+  slug               String       @unique
+  summary            String?
+  content            String
+  coverImageUrl      String?
+  coverImageKey      String?
+  source             String?
+  sourceUrl          String?
+  language           NewsLanguage @default(EN)
+  status             NewsStatus   @default(DRAFT)
+  isBreaking         Boolean      @default(false)
+  isFeatured         Boolean      @default(false)
+  isPremium          Boolean      @default(false)
+  tags               String[]     @default([])
+  aiTags             String[]     @default([])
+  viewCount          Int          @default(0)
+  shareCount         Int          @default(0)
+  bookmarkCount      Int          @default(0)
+  readingTimeMinutes Int          @default(1)
+  publishedAt        DateTime?
+  scheduledAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime?
+  authorId           String
+  categoryId         String
+
+  author       User                 @relation("AuthorArticles", fields: [authorId], references: [id])
+  category     Category             @relation(fields: [categoryId], references: [id])
+  bookmarks    Bookmark[]
+  readHistory  ReadHistory[]
+  translations ArticleTranslation[]
+
+  @@index([status, deletedAt])
+  @@index([language, status])
+  @@index([categoryId, status])
+  @@index([publishedAt(sort: Desc)])
+  @@map("news_articles")
+}
+
+model ArticleTranslation {
+  id        String       @id @default(cuid())
+  articleId String
+  language  NewsLanguage
+  title     String
+  content   String
+  summary   String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  article NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, language])
+  @@map("article_translations")
+}
+
+// ── User Activity ─────────────────────────────────────────────────────────────
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  articleId String
+  createdAt DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@map("bookmarks")
+}
+
+model ReadHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  articleId String
+  readAt    DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId])
+  @@map("read_history")
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+model UserNotification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String    @default("general")
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("user_notifications")
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  eventType  String
+  userId     String?
+  articleId  String?
+  sessionId  String?
+  platform   String?
+  appVersion String?
+  createdAt  DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([userId])
+  @@map("analytics_events")
+}
