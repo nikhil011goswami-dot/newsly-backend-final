@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'newsly-api',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js',
 
       // Cluster mode: one instance per CPU core
       instances: 'max',
