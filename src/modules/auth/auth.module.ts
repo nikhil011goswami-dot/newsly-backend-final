@@ -86,6 +86,7 @@ import { LogoutUseCase }         from './application/use-cases/logout.use-case';
     JwtModule,
     TokenService,
     PasswordService,
+    AuthRepository,
   ],
 })
 export class AuthModule {}
