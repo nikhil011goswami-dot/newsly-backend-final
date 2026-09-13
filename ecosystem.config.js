@@ -31,7 +31,6 @@ module.exports = {
 
       // Graceful shutdown
       kill_timeout: 5000,
-      wait_ready: true,
       listen_timeout: 10000,
 
       // Restart delay between crashes

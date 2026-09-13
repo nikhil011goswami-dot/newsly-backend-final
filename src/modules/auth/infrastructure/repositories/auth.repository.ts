@@ -89,7 +89,25 @@ export class AuthRepository implements IAuthRepository {
   }
 
   async deactivateAllUserSessions(userId: string): Promise<void> {
-    await this.prisma.userSession.updateMany({ where: { userId, isActive: true }, data: { isActive: false } });
+    const sessions = await this.prisma.userSession.findMany({
+      where: { userId, isActive: true },
+      select: { id: true },
+    });
+
+    if (sessions.length === 0) return;
+
+    const sessionIds = sessions.map((session) => session.id);
+
+    await this.prisma.$transaction([
+      this.prisma.refreshToken.updateMany({
+        where: { sessionId: { in: sessionIds }, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      this.prisma.userSession.updateMany({
+        where: { id: { in: sessionIds } },
+        data: { isActive: false },
+      }),
+    ]);
   }
 
   // ── REFRESH TOKENS ─────────────────────────────────────────────────────────

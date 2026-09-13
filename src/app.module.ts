@@ -18,6 +18,8 @@ import { LoggingModule }          from '@infrastructure/logging/logging.module';
 // Phase 1 Feature Modules
 import { AuthModule } from '@modules/auth/auth.module';
 import { UserModule } from '@modules/user/user.module';
+import { CategoryModule } from '@modules/category/category.module';
+import { NewsModule } from '@modules/news/news.module';
 
 // Health
 import { HealthModule } from './health/health.module';
@@ -57,6 +59,8 @@ import { HealthModule } from './health/health.module';
     // Phase 1 features
     AuthModule,
     UserModule,
+    CategoryModule,
+    NewsModule,
 
     // Health checks
     HealthModule,

@@ -9,7 +9,7 @@ import {
 import { JwtAuthGuard }  from '@modules/auth/presentation/guards/jwt-auth.guard';
 import { CurrentUser }   from '@common/decorators/current-user.decorator';
 import { RequestUser }   from '@common/types';
-import { ParseUuidPipe } from '@common/pipes/parse-uuid.pipe';
+import { ParseCuidPipe } from '@common/pipes/parse-cuid.pipe';
 
 import { UserService }       from '../../application/services/user.service';
 import { UpdateProfileDto }  from '../../application/dto/update-profile.dto';
@@ -82,7 +82,7 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Session does not belong to you' })
   revokeSession(
     @CurrentUser() user: RequestUser,
-    @Param('sessionId', ParseUuidPipe) sessionId: string,
+    @Param('sessionId', ParseCuidPipe) sessionId: string,
   ) {
     return this.userService.revokeSession(sessionId, user.id);
   }
