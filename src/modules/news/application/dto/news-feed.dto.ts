@@ -27,6 +27,11 @@ export class NewsFeedDto {
   @Max(50)
   limit?: number = 10;
 
+  @ApiPropertyOptional({ example: 'AI', description: 'Search in news title, summary, and content' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
   @ApiPropertyOptional({ example: 'technology' })
   @IsOptional()
   @IsString()

@@ -116,6 +116,15 @@ export class NewsRepository implements INewsRepository {
             },
           }
         : {}),
+      ...(filters.search
+        ? {
+            OR: [
+              { title: { contains: filters.search, mode: 'insensitive' } },
+              { summary: { contains: filters.search, mode: 'insensitive' } },
+              { content: { contains: filters.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([

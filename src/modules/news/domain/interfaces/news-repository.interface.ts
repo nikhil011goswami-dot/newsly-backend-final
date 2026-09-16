@@ -68,6 +68,7 @@ export interface NewsArticleWithRelations extends NewsArticle {
 export interface NewsFeedFilters {
   page?: number;
   limit?: number;
+  search?: string;
   categorySlug?: string;
   language?: NewsLanguage;
   status?: NewsStatus;
