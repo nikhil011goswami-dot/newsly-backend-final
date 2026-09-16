@@ -20,6 +20,7 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { UserModule } from '@modules/user/user.module';
 import { CategoryModule } from '@modules/category/category.module';
 import { NewsModule } from '@modules/news/news.module';
+import { BookmarkModule } from '@modules/bookmark/bookmark.module';
 
 // Health
 import { HealthModule } from './health/health.module';
@@ -61,6 +62,7 @@ import { HealthModule } from './health/health.module';
     UserModule,
     CategoryModule,
     NewsModule,
+    BookmarkModule,
 
     // Health checks
     HealthModule,
