@@ -33,7 +33,9 @@ export class NewsService {
       page: filters.page ?? 1,
       limit: filters.limit ?? 10,
       categorySlug: filters.categorySlug ?? null,
+      preferredCategories: filters.preferredCategories ?? [],
       language: filters.language ?? null,
+      search: filters.search ?? null,
       status: filters.status ?? null,
       isBreaking: filters.isBreaking ?? null,
       isFeatured: filters.isFeatured ?? null,
@@ -49,7 +51,7 @@ export class NewsService {
     filters: NewsFeedFilters,
     userId?: string,
   ): Promise<PaginatedNews> {
-    let personalizedFilters = { ...filters };
+    let personalizedFilters = { ...filters, status: NewsStatus.PUBLISHED };
 
     if (userId) {
       const user = await this.userRepository.findById(userId);
