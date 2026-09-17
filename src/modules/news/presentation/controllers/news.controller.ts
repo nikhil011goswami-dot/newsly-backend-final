@@ -23,6 +23,8 @@ import { Public } from "@common/decorators/public.decorator";
 import { Roles } from "@common/decorators/roles.decorator";
 import { ParseCuidPipe } from "@common/pipes/parse-cuid.pipe";
 import { JwtAuthGuard } from "@modules/auth/presentation/guards/jwt-auth.guard";
+import { OptionalJwtAuthGuard } from "@modules/auth/presentation/guards/optional-jwt-auth.guard";
+import { RequestWithUser } from "@common/types";
 import { RolesGuard } from "@modules/auth/presentation/guards/roles.guard";
 
 import { CreateNewsDto } from "../../application/dto/create-news.dto";
@@ -38,10 +40,14 @@ export class NewsController {
 
   @Get()
   @Public()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get paginated news feed' })
   @ApiResponse({ status: 200, description: 'News feed returned' })
-  getFeed(@Query() query: NewsFeedDto) {
-    return this.newsService.getFeed(query);
+  getFeed(
+    @Query() query: NewsFeedDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.newsService.getFeed(query, req.user?.id);
   }
 
   @Get('slug/:slug')

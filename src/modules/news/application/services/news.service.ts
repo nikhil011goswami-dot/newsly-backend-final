@@ -9,6 +9,7 @@ import { RedisService } from '@infrastructure/cache/redis.service';
 import { CACHE_KEYS } from '@common/constants';
 
 import { NewsRepository } from '../../infrastructure/repositories/news.repository';
+import { UserRepository } from '@modules/user/infrastructure/repositories/user.repository';
 import {
   CreateNewsData,
   NewsArticleWithRelations,
@@ -24,6 +25,7 @@ export class NewsService {
   constructor(
     private readonly newsRepository: NewsRepository,
     private readonly redisService: RedisService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   private feedCacheKey(filters: NewsFeedFilters): string {
@@ -43,13 +45,38 @@ export class NewsService {
     return `${CACHE_KEYS.NEWS_ARTICLE}:${slug}`;
   }
 
-  async getFeed(filters: NewsFeedFilters): Promise<PaginatedNews> {
-    const cacheKey = this.feedCacheKey(filters);
+  async getFeed(
+    filters: NewsFeedFilters,
+    userId?: string,
+  ): Promise<PaginatedNews> {
+    let personalizedFilters = { ...filters };
+
+    if (userId) {
+      const user = await this.userRepository.findById(userId);
+
+      if (user) {
+        const preferredCategories = Array.isArray(user.preferredCategories)
+          ? user.preferredCategories.filter(
+              (category): category is string => typeof category === 'string',
+            )
+          : [];
+
+        if (!filters.language && user.preferredLanguage) {
+          personalizedFilters.language = user.preferredLanguage.toUpperCase() as NewsLanguage;
+        }
+
+        if (!filters.categorySlug && preferredCategories.length > 0) {
+          personalizedFilters.preferredCategories = preferredCategories;
+        }
+      }
+    }
+
+    const cacheKey = this.feedCacheKey(personalizedFilters);
 
     const cached = await this.redisService.get<PaginatedNews>(cacheKey);
     if (cached) return cached;
 
-    const result = await this.newsRepository.findFeed(filters);
+    const result = await this.newsRepository.findFeed(personalizedFilters);
 
     await this.redisService.set(cacheKey, result, this.cacheTtl);
 

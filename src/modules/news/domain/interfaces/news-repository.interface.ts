@@ -70,6 +70,7 @@ export interface NewsFeedFilters {
   limit?: number;
   search?: string;
   categorySlug?: string;
+  preferredCategories?: string[];
   language?: NewsLanguage;
   status?: NewsStatus;
   isBreaking?: boolean;

@@ -20,6 +20,7 @@ import { JwtStrategy }        from './infrastructure/services/jwt-strategy';
 
 // Presentation
 import { JwtAuthGuard }   from './presentation/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './presentation/guards/optional-jwt-auth.guard';
 import { RolesGuard }     from './presentation/guards/roles.guard';
 import { AuthController } from './presentation/controllers/auth.controller';
 
@@ -67,6 +68,7 @@ import { LogoutUseCase }         from './application/use-cases/logout.use-case';
 
     // Guards (exported so other modules can apply them)
     JwtAuthGuard,
+    OptionalJwtAuthGuard,
     RolesGuard,
 
     // Use-cases
@@ -82,6 +84,7 @@ import { LogoutUseCase }         from './application/use-cases/logout.use-case';
   ],
   exports: [
     JwtAuthGuard,
+    OptionalJwtAuthGuard,
     RolesGuard,
     JwtModule,
     TokenService,

@@ -116,6 +116,15 @@ export class NewsRepository implements INewsRepository {
             },
           }
         : {}),
+      ...(filters.preferredCategories &&
+      filters.preferredCategories.length > 0
+        ? {
+            category: {
+              slug: { in: filters.preferredCategories },
+              isActive: true,
+            },
+          }
+        : {}),
       ...(filters.search
         ? {
             OR: [
