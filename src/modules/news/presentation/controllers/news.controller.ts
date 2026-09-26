@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,16 +9,24 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiQuery,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
 import { NewsLanguage, NewsStatus, UserRole } from "@prisma/client";
+
+import { S3Service } from "@infrastructure/storage/s3.service";
 
 import { Public } from "@common/decorators/public.decorator";
 import { Roles } from "@common/decorators/roles.decorator";
@@ -36,7 +45,10 @@ import { NewsService } from "../../application/services/news.service";
 @ApiTags('News')
 @Controller({ path: 'news', version: '1' })
 export class NewsController {
-  constructor(private readonly newsService: NewsService) {}
+  constructor(
+    private readonly newsService: NewsService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @Get()
   @Public()
@@ -66,6 +78,70 @@ export class NewsController {
   @ApiResponse({ status: 404, description: 'News article not found' })
   getById(@Param('id', ParseCuidPipe) id: string) {
     return this.newsService.getById(id);
+  }
+
+  @Post('upload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.EDITOR)
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      file: {
+        type: 'string',
+        format: 'binary',
+      },
+    },
+    required: ['file'],
+  },
+})
+  @UseInterceptors(
+  FileInterceptor('file', {
+    limits: {
+      fileSize: 50 * 1024 * 1024,
+    },
+  }),
+)
+  @ApiOperation({ summary: 'Upload news media to S3' })
+  @ApiResponse({ status: 201, description: 'Media uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or missing file' })
+  @ApiResponse({ status: 403, description: 'Editor or admin access required' })
+  async uploadMedia(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'video/mp4',
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Only JPEG, PNG, WebP images and MP4 videos are allowed',
+      );
+    }
+
+    const maxSize = 50 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      throw new BadRequestException('File size must not exceed 50MB');
+    }
+
+    const folder = file.mimetype.startsWith('video/')
+      ? 'news/videos/'
+      : 'news/images/';
+
+    return this.s3Service.upload(
+      file.buffer,
+      folder,
+      file.mimetype,
+      file.originalname,
+    );
   }
 
   @Post()
