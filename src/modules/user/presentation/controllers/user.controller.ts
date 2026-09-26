@@ -14,6 +14,7 @@ import { ParseCuidPipe } from '@common/pipes/parse-cuid.pipe';
 import { UserService }       from '../../application/services/user.service';
 import { UpdateProfileDto }  from '../../application/dto/update-profile.dto';
 import { ChangePasswordDto } from '../../application/dto/change-password.dto';
+import { FcmTokenDto }      from '../../application/dto/fcm-token.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('access-token')
@@ -85,5 +86,29 @@ export class UserController {
     @Param('sessionId', ParseCuidPipe) sessionId: string,
   ) {
     return this.userService.revokeSession(sessionId, user.id);
+  }
+
+  // ── Push notification devices ─────────────────────────────────────────────
+
+  @Post('me/fcm-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Register an FCM device token' })
+  @ApiResponse({ status: 200, description: 'FCM token registered' })
+  registerFcmToken(
+    @CurrentUser() user: RequestUser,
+    @Body() dto: FcmTokenDto,
+  ) {
+    return this.userService.registerFcmToken(user.id, dto.token);
+  }
+
+  @Delete('me/fcm-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove an FCM device token' })
+  @ApiResponse({ status: 200, description: 'FCM token removed' })
+  removeFcmToken(
+    @CurrentUser() user: RequestUser,
+    @Body() dto: FcmTokenDto,
+  ) {
+    return this.userService.removeFcmToken(user.id, dto.token);
   }
 }

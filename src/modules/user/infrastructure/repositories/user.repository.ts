@@ -72,4 +72,43 @@ export class UserRepository implements IUserRepository {
       });
     }
   }
+
+  async addFcmToken(userId: string, token: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { fcmTokens: true },
+    });
+
+    if (!user) return;
+
+    const tokens = Array.isArray(user.fcmTokens)
+      ? user.fcmTokens.filter((value): value is string => typeof value === 'string')
+      : [];
+
+    if (!tokens.includes(token)) {
+      tokens.push(token);
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { fcmTokens: tokens },
+      });
+    }
+  }
+
+  async removeFcmToken(userId: string, token: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { fcmTokens: true },
+    });
+
+    if (!user) return;
+
+    const tokens = Array.isArray(user.fcmTokens)
+      ? user.fcmTokens.filter((value): value is string => typeof value === 'string' && value !== token)
+      : [];
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { fcmTokens: tokens },
+    });
+  }
 }

@@ -84,4 +84,24 @@ export class UserService {
     this.logger.log(`Session ${sessionId} revoked by user ${userId}`);
     return { message: 'Device session revoked successfully.' };
   }
+
+  async registerFcmToken(userId: string, token: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.userRepository.addFcmToken(userId, token);
+    this.logger.log(`FCM token registered for user ${userId}`);
+
+    return { message: 'FCM token registered successfully.' };
+  }
+
+  async removeFcmToken(userId: string, token: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.userRepository.removeFcmToken(userId, token);
+    this.logger.log(`FCM token removed for user ${userId}`);
+
+    return { message: 'FCM token removed successfully.' };
+  }
 }

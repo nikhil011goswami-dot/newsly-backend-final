@@ -21,6 +21,7 @@ import { UserModule } from '@modules/user/user.module';
 import { CategoryModule } from '@modules/category/category.module';
 import { NewsModule } from '@modules/news/news.module';
 import { BookmarkModule } from '@modules/bookmark/bookmark.module';
+import { NotificationModule } from '@modules/notification/notification.module';
 
 // Health
 import { HealthModule } from './health/health.module';
@@ -63,6 +64,7 @@ import { HealthModule } from './health/health.module';
     CategoryModule,
     NewsModule,
     BookmarkModule,
+    NotificationModule,
 
     // Health checks
     HealthModule,

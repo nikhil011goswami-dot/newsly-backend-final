@@ -18,4 +18,6 @@ export interface IUserRepository {
   findActiveSessions(userId: string): Promise<UserSession[]>;
   revokeSession(sessionId: string, userId: string): Promise<void>;
   revokeAllSessions(userId: string): Promise<void>;
+  addFcmToken(userId: string, token: string): Promise<void>;
+  removeFcmToken(userId: string, token: string): Promise<void>;
 }

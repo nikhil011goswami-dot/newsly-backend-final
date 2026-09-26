@@ -56,8 +56,8 @@ async function bootstrap(): Promise<void> {
     new ResponseInterceptor(),
   );
 
-  // ── Swagger (non-production only) ─────────────────────────────────────────
-  if (nodeEnv !== 'production') {
+  // ── Swagger ────────────────────────────────────────────────────────────────
+  {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Newsly API')
       .setDescription('Newsly Phase 1 — Authentication Backend')
@@ -79,9 +79,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(port);
   console.log(`🚀 Newsly API running on http://localhost:${port}/api`);
-  if (nodeEnv !== 'production') {
-    console.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
-  }
+  console.log(`📖 Swagger docs: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();
