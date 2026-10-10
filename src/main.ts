@@ -23,7 +23,7 @@ async function bootstrap(): Promise<void> {
   const corsOrigins   = configService.get<string>('app.corsOrigins', 'http://localhost:3000');
 
   // ── Security ──────────────────────────────────────────────────────────────
-  app.use(helmet());
+  app.use(helmet({ contentSecurityPolicy: { directives: { 'upgrade-insecure-requests': null } } }));
 
   app.enableCors({
     origin:      corsOrigins.split(',').map((o) => o.trim()),
@@ -72,7 +72,7 @@ async function bootstrap(): Promise<void> {
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('api/docs', app, document, {
+    SwaggerModule.setup('docs', app, document, { useGlobalPrefix: true,
       swaggerOptions: { persistAuthorization: true },
     });
   }
