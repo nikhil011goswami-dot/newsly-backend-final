@@ -53,7 +53,7 @@ describe('AuthController HTTP integration', () => {
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
-        transformOptions: { enableImplicitConversion: false },
+        transformOptions: { enableImplicitConversion: true },
       }),
     );
     await app.init();
