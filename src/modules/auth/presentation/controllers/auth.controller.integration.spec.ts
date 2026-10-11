@@ -216,4 +216,55 @@ describe('AuthController HTTP integration', () => {
     );
   });
 
+
+  it('should reject reset-password requests missing the token', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ newPassword: 'NewPassword123' })
+      .expect(400);
+
+    expect(resetPasswordUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should reject reset-password requests with a weak password', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ token: 'reset-token', newPassword: 'weak' })
+      .expect(400);
+
+    expect(resetPasswordUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should reject unknown fields in a reset-password request', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({
+        token: 'reset-token',
+        newPassword: 'NewPassword123',
+        unexpectedField: true,
+      })
+      .expect(400);
+
+    expect(resetPasswordUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should pass a valid reset-password request to the use case', async () => {
+    resetPasswordUseCase.execute.mockResolvedValue({
+      message: 'Password reset successfully',
+    });
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({
+        token: 'reset-token',
+        newPassword: 'NewPassword123',
+      })
+      .expect(200);
+
+    expect(resetPasswordUseCase.execute).toHaveBeenCalledWith(
+      'reset-token',
+      'NewPassword123',
+    );
+  });
+
 });
