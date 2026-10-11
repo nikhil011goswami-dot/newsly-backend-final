@@ -53,7 +53,7 @@ describe('AuthController HTTP integration', () => {
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
-        transformOptions: { enableImplicitConversion: true },
+        transformOptions: { enableImplicitConversion: false },
       }),
     );
     await app.init();
@@ -295,6 +295,41 @@ describe('AuthController HTTP integration', () => {
       .expect(400);
 
     expect(verifyEmailUseCase.execute).toHaveBeenCalledWith(undefined);
+  });
+
+
+  it('should reject refresh requests missing the refresh token', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({})
+      .expect(400);
+
+    expect(refreshTokenUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should reject a non-string refresh token', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: 12345 })
+      .expect(400);
+
+    expect(refreshTokenUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should pass a valid refresh token to the use case', async () => {
+    refreshTokenUseCase.execute.mockResolvedValue({
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-rotated-refresh-token',
+    });
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: 'mock-refresh-token' })
+      .expect(200);
+
+    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith(
+      'mock-refresh-token',
+    );
   });
 
 });
