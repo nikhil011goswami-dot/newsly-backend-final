@@ -179,4 +179,41 @@ describe('AuthController HTTP integration', () => {
     });
   });
 
+
+  it('should reject forgot-password requests with an invalid email', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'invalid-email' })
+      .expect(400);
+
+    expect(forgotPasswordUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should reject unknown fields in a forgot-password request', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .send({
+        email: 'user@example.com',
+        unexpectedField: true,
+      })
+      .expect(400);
+
+    expect(forgotPasswordUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should pass a valid email to the forgot-password use case', async () => {
+    forgotPasswordUseCase.execute.mockResolvedValue({
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    });
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'user@example.com' })
+      .expect(200);
+
+    expect(forgotPasswordUseCase.execute).toHaveBeenCalledWith(
+      'user@example.com',
+    );
+  });
+
 });
