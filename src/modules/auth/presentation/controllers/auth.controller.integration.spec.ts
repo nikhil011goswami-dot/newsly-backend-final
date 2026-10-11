@@ -267,4 +267,34 @@ describe('AuthController HTTP integration', () => {
     );
   });
 
+
+  it('should call the email-verification use case with the query token', async () => {
+    verifyEmailUseCase.execute.mockResolvedValue({
+      message: 'Email verified successfully. You can now log in.',
+    });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/auth/verify-email')
+      .query({ token: 'verification-token' })
+      .expect(200);
+
+    expect(verifyEmailUseCase.execute).toHaveBeenCalledWith(
+      'verification-token',
+    );
+  });
+
+  it('should pass an absent verification token to the use case', async () => {
+    verifyEmailUseCase.execute.mockRejectedValue(
+      new (require('@nestjs/common').BadRequestException)(
+        'Invalid verification link',
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .get('/api/v1/auth/verify-email')
+      .expect(400);
+
+    expect(verifyEmailUseCase.execute).toHaveBeenCalledWith(undefined);
+  });
+
 });
