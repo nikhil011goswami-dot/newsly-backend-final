@@ -116,4 +116,67 @@ describe('AuthController HTTP integration', () => {
       'Newsly-Integration-Test',
     );
   });
+
+  it('should reject registration with an invalid email', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'invalid-email',
+        fullName: 'Test User',
+        password: 'Strong@123',
+      })
+      .expect(400);
+
+    expect(registerUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should reject registration with a weak password', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'user@example.com',
+        fullName: 'Test User',
+        password: 'weakpass',
+      })
+      .expect(400);
+
+    expect(registerUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should reject unknown fields in a registration request', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'user@example.com',
+        fullName: 'Test User',
+        password: 'Strong@123',
+        unexpectedField: true,
+      })
+      .expect(400);
+
+    expect(registerUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('should pass a valid registration request to the use case', async () => {
+    registerUseCase.execute.mockResolvedValue({ message: 'registration handled' });
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'user@example.com',
+        fullName: 'Test User',
+        password: 'Strong@123',
+      })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body).toEqual({ message: 'registration handled' });
+      });
+
+    expect(registerUseCase.execute).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      fullName: 'Test User',
+      password: 'Strong@123',
+    });
+  });
+
 });
